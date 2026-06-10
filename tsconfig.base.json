@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "jsx": "preserve",
+    "module": "nodenext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "preserveWatchOutput": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true
+  },
+  "include": ["*.d.ts", "**/*.d.ts"],
+  "exclude": ["node_modules"]
+}
