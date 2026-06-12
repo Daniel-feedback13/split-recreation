@@ -111,6 +111,7 @@ void findAvailablePort(preferredPort, hostname).then((port) => {
           message: payload.message,
           showParticipantOverlay: payload.showParticipantOverlay,
           showTeamScoreOverlay: payload.showTeamScoreOverlay,
+          randomPickup: payload.randomPickup,
           teams: payload.teams,
           buzzerBattle: payload.buzzerBattle,
           teamSurvey: payload.teamSurvey,

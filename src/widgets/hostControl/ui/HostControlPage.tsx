@@ -18,6 +18,7 @@ import {
 import ModeSelectPanel from "./ModeSelectPanel";
 import TeamScoreControlPanel from "./TeamScoreControlPanel";
 import modeOptions from "../model/modeOptions";
+import shuffleItems from "../model/randomPickup";
 import { createDefaultTeam, normalizeTeams } from "@/entities/team/model/team";
 import teamSurveyQuestions from "@/entities/teamSurvey/model/questions";
 import DEFAULT_ROOM_ID from "@/shared/config/room";
@@ -77,6 +78,8 @@ export default function HostPage() {
   );
   const totalParticipants = state?.participants.length ?? 0;
   const surveyQuestionCount = teamSurveyQuestions.length;
+  const selectedPickupParticipantId = state?.randomPickup.selectedParticipantId ?? "";
+  const pickupParticipantCount = state?.randomPickup.participantIds.length ?? 0;
   const unassignedParticipants = useMemo(() => {
     const assignedIds = new Set(draftTeams.flatMap((team) => team.memberIds));
 
@@ -344,6 +347,54 @@ export default function HostPage() {
     });
   };
 
+  const openRandomPickup = () => {
+    const shuffledParticipantIds = shuffleItems(
+      connectedParticipants.map((participant) => participant.id),
+    );
+
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      randomPickup: {
+        open: true,
+        revealNames: false,
+        participantIds: shuffledParticipantIds,
+        selectedParticipantId: undefined,
+      },
+    });
+  };
+
+  const selectRandomPickupParticipant = (participantId: string) => {
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      randomPickup: {
+        open: true,
+        selectedParticipantId: participantId || undefined,
+      },
+    });
+  };
+
+  const revealRandomPickupNames = () => {
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      randomPickup: {
+        open: true,
+        revealNames: true,
+      },
+    });
+  };
+
+  const closeRandomPickup = () => {
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      randomPickup: {
+        open: false,
+        revealNames: false,
+        participantIds: [],
+        selectedParticipantId: undefined,
+      },
+    });
+  };
+
   return (
     <Box
       component="main"
@@ -415,6 +466,9 @@ export default function HostPage() {
                 </Button>
                 <Button variant="outlined" onClick={toggleTeamScoreOverlay}>
                   {state?.showTeamScoreOverlay ? "팀 점수판 닫기" : "팀 점수판 보기"}
+                </Button>
+                <Button variant="outlined" onClick={openRandomPickup}>
+                  pickup
                 </Button>
               </Stack>
 
@@ -562,6 +616,55 @@ export default function HostPage() {
             onScoreAdjust={adjustTeamScore}
             onScoreChange={updateTeamScore}
           />
+
+          <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
+            <Stack spacing={2.5}>
+              <Typography variant="h5">무작위 픽업</Typography>
+              <Typography color="text.secondary">
+                참가자 전체를 섞어 번호만 먼저 공개하고, 선택 번호를 정한 뒤 닉네임을
+                공개합니다.
+              </Typography>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <Button
+                  variant="contained"
+                  onClick={openRandomPickup}
+                  disabled={connectedParticipants.length === 0}
+                >
+                  리스트 생성
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={revealRandomPickupNames}
+                  disabled={pickupParticipantCount === 0}
+                >
+                  닉네임 공개
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={closeRandomPickup}
+                  disabled={!state?.randomPickup.open}
+                >
+                  오버레이 닫기
+                </Button>
+              </Stack>
+              <TextField
+                select
+                label="선택 번호"
+                value={selectedPickupParticipantId}
+                onChange={(event) => selectRandomPickupParticipant(event.target.value)}
+                disabled={pickupParticipantCount === 0}
+                sx={{ maxWidth: 260 }}
+              >
+                <MenuItem value="">선택 안함</MenuItem>
+                {state?.randomPickup.participantIds.map((participantId, index) => (
+                  <MenuItem key={participantId} value={participantId}>
+                    {index + 1}번
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          </Paper>
 
           <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
             <Stack spacing={2.5}>

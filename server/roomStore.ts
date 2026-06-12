@@ -17,6 +17,7 @@ interface RoomRecord {
   participants: Map<string, Participant>;
   showParticipantOverlay: boolean;
   showTeamScoreOverlay: boolean;
+  randomPickup?: RoomState["randomPickup"];
   teams: TeamConfig[];
   buzzerBattle: RoomState["buzzerBattle"];
   teamSurvey: RoomState["teamSurvey"];
@@ -34,6 +35,7 @@ interface RoomPatch {
   message?: string;
   showParticipantOverlay?: boolean;
   showTeamScoreOverlay?: boolean;
+  randomPickup?: Partial<RoomState["randomPickup"]>;
   teams?: TeamConfig[];
   buzzerBattle?: Partial<RoomState["buzzerBattle"]>;
   teamSurvey?: Partial<RoomState["teamSurvey"]>;
@@ -52,17 +54,33 @@ function createDefaultTimingGame(): RoomState["timingGame"] {
   };
 }
 
+function createDefaultRandomPickup(): RoomState["randomPickup"] {
+  return {
+    open: false,
+    revealNames: false,
+    participantIds: [],
+    selectedParticipantId: undefined,
+  };
+}
+
 function ensureRoomDefaults(
   room: RoomRecord,
-): RoomRecord & { timingGame: RoomState["timingGame"] } {
+): RoomRecord & {
+  timingGame: RoomState["timingGame"];
+  randomPickup: RoomState["randomPickup"];
+} {
   room.showTeamScoreOverlay ??= false;
   room.timingGame ??= createDefaultTimingGame();
+  room.randomPickup ??= createDefaultRandomPickup();
   room.buzzerBattle = {
     ...room.buzzerBattle,
     level: room.buzzerBattle.level ?? 1,
   };
 
-  return room as RoomRecord & { timingGame: RoomState["timingGame"] };
+  return room as RoomRecord & {
+    timingGame: RoomState["timingGame"];
+    randomPickup: RoomState["randomPickup"];
+  };
 }
 
 function createRoom(roomId: string): RoomRecord {
@@ -74,6 +92,7 @@ function createRoom(roomId: string): RoomRecord {
     participants: new Map(),
     showParticipantOverlay: false,
     showTeamScoreOverlay: false,
+    randomPickup: createDefaultRandomPickup(),
     teams: [],
     buzzerBattle: {
       level: 1,
@@ -102,7 +121,10 @@ function createRoom(roomId: string): RoomRecord {
 
 export function getOrCreateRoom(
   roomId: string,
-): RoomRecord & { timingGame: RoomState["timingGame"] } {
+): RoomRecord & {
+  timingGame: RoomState["timingGame"];
+  randomPickup: RoomState["randomPickup"];
+} {
   const room = rooms.get(roomId) ?? createRoom(roomId);
   return ensureRoomDefaults(room);
 }
@@ -120,6 +142,7 @@ export function toRoomState(room: RoomRecord): RoomState {
     ),
     showParticipantOverlay: safeRoom.showParticipantOverlay,
     showTeamScoreOverlay: safeRoom.showTeamScoreOverlay,
+    randomPickup: safeRoom.randomPickup,
     teams: safeRoom.teams,
     buzzerBattle: safeRoom.buzzerBattle,
     teamSurvey: safeRoom.teamSurvey,
@@ -183,6 +206,11 @@ export function updateRoom(roomId: string, patch: RoomPatch): RoomRecord {
   room.showParticipantOverlay =
     patch.showParticipantOverlay ?? room.showParticipantOverlay;
   room.showTeamScoreOverlay = patch.showTeamScoreOverlay ?? room.showTeamScoreOverlay;
+  room.randomPickup = {
+    ...createDefaultRandomPickup(),
+    ...room.randomPickup,
+    ...patch.randomPickup,
+  };
   room.teams = patch.teams ?? room.teams;
   room.buzzerBattle = { ...room.buzzerBattle, ...patch.buzzerBattle };
   room.teamSurvey = { ...room.teamSurvey, ...patch.teamSurvey };

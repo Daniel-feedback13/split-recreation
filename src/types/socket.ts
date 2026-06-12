@@ -69,6 +69,13 @@ export interface TimingGameState {
   clicks: TimingGameClick[];
 }
 
+export interface RandomPickupState {
+  open: boolean;
+  revealNames: boolean;
+  participantIds: string[];
+  selectedParticipantId?: string;
+}
+
 export interface RoomState {
   roomId: string;
   phase: RoomPhase;
@@ -77,6 +84,7 @@ export interface RoomState {
   participants: Participant[];
   showParticipantOverlay: boolean;
   showTeamScoreOverlay: boolean;
+  randomPickup: RandomPickupState;
   teams: TeamConfig[];
   buzzerBattle: BuzzerBattleState;
   teamSurvey: TeamSurveyState;
@@ -106,6 +114,7 @@ export interface HostCommandPayload {
   message?: string;
   showParticipantOverlay?: boolean;
   showTeamScoreOverlay?: boolean;
+  randomPickup?: Partial<RandomPickupState>;
   teams?: TeamConfig[];
   buzzerBattle?: Partial<BuzzerBattleState>;
   teamSurvey?: Partial<TeamSurveyState>;

@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import ParticipantOverlayDialog from "./ParticipantOverlayDialog";
+import RandomPickupOverlayDialog from "./RandomPickupOverlayDialog";
 import TeamScoreOverlayDialog from "./TeamScoreOverlayDialog";
 import { formatTimeWithMilliseconds, normalizeAnswer } from "../model/format";
 import DEFAULT_ROOM_ID from "@/shared/config/room";
@@ -618,6 +619,17 @@ export default function DisplayPage() {
       <TeamScoreOverlayDialog
         open={Boolean(state?.showTeamScoreOverlay)}
         rankedTeams={rankedTeams}
+      />
+      <RandomPickupOverlayDialog
+        open={Boolean(state?.randomPickup.open)}
+        randomPickup={
+          state?.randomPickup ?? {
+            open: false,
+            revealNames: false,
+            participantIds: [],
+          }
+        }
+        participants={state?.participants ?? []}
       />
     </Box>
   );
