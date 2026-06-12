@@ -170,7 +170,8 @@ export default function PlayerGamePanel({
               disabled={!isSpeedQuizEnabled}
               onClick={onBuzzer}
               sx={{
-                minHeight: 180,
+                width: "100%",
+                minHeight: { xs: 240, md: 300 },
                 borderRadius: "999px",
                 fontSize: { xs: 36, md: 54 },
                 fontWeight: 900,
