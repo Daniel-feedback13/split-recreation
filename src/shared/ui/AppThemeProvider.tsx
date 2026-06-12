@@ -1,3 +1,12 @@
-import AppThemeProvider from "@/components/AppThemeProvider";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import theme from "@/shared/config/theme";
+import type { PropsWithChildren } from "react";
 
-export default AppThemeProvider;
+export default function AppThemeProvider({ children }: PropsWithChildren) {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  );
+}

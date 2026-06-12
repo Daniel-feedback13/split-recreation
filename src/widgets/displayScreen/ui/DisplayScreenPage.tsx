@@ -13,22 +13,9 @@ import {
 } from "@mui/material";
 import ParticipantOverlayDialog from "./ParticipantOverlayDialog";
 import TeamScoreOverlayDialog from "./TeamScoreOverlayDialog";
+import { formatTimeWithMilliseconds, normalizeAnswer } from "../model/format";
 import DEFAULT_ROOM_ID from "@/shared/config/room";
 import useRoomSocket from "@/shared/lib/useRoomSocket";
-
-function normalizeAnswer(answer: string) {
-  return answer.trim().toLowerCase();
-}
-
-function formatTimeWithMilliseconds(timestamp: number) {
-  const date = new Date(timestamp);
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
-  const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
-
-  return `${hours}:${minutes}:${seconds}.${milliseconds}`;
-}
 
 export default function DisplayPage() {
   const { socket, state, lastEvent } = useRoomSocket(DEFAULT_ROOM_ID);

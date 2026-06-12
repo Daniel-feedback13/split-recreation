@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import ModeSelectPanel from "./ModeSelectPanel";
 import TeamScoreControlPanel from "./TeamScoreControlPanel";
+import modeOptions from "../model/modeOptions";
 import { createDefaultTeam, normalizeTeams } from "@/entities/team/model/team";
 import teamSurveyQuestions from "@/entities/teamSurvey/model/questions";
 import DEFAULT_ROOM_ID from "@/shared/config/room";
@@ -28,14 +29,6 @@ import type {
   ScreenRoute,
   TeamConfig,
 } from "@/shared/model/socket";
-
-const modeOptions: { value: GameMode; label: string }[] = [
-  { value: "idle", label: "미선택" },
-  { value: "buzzerBattle", label: "버저비터" },
-  { value: "teamSurvey", label: "단합력 평가" },
-  { value: "speedQuiz", label: "스피드 퀴즈" },
-  { value: "timingGame", label: "눈치게임" },
-];
 
 export default function HostPage() {
   const { socket, state, lastEvent } = useRoomSocket(DEFAULT_ROOM_ID);
