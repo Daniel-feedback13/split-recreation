@@ -57,6 +57,7 @@ export default function DisplayPage() {
     () => state?.participants.filter((participant) => participant.connected) ?? [],
     [state?.participants],
   );
+  const allParticipants = useMemo(() => state?.participants ?? [], [state?.participants]);
 
   const groupedTeams = useMemo(
     () =>
@@ -64,11 +65,11 @@ export default function DisplayPage() {
         id: team.id,
         name: team.name || `Team ${index + 1}`,
         score: team.score ?? 0,
-        members: connectedParticipants.filter((participant) =>
+        members: allParticipants.filter((participant) =>
           team.memberIds.includes(participant.id),
         ),
       })) ?? [],
-    [connectedParticipants, state?.teams],
+    [allParticipants, state?.teams],
   );
 
   const rankedTeams = useMemo(
@@ -76,23 +77,45 @@ export default function DisplayPage() {
     [groupedTeams],
   );
 
-  const battleResults = useMemo(
-    () =>
-      groupedTeams.map((team) => ({
+  const battleResults = useMemo(() => {
+    const counts = state?.buzzerBattle.counts ?? {};
+    const hasAssignedTeamMembers = groupedTeams.some((team) => team.members.length > 0);
+
+    if (!hasAssignedTeamMembers) {
+      return allParticipants.length > 0
+        ? [
+            {
+              id: "all-participants",
+              name: "전체 참가자",
+              members: allParticipants,
+              total: allParticipants.reduce(
+                (sum, member) => sum + (counts[member.id] ?? 0),
+                0,
+              ),
+              memberCounts: allParticipants
+                .map((member) => ({
+                  nickname: member.nickname,
+                  count: counts[member.id] ?? 0,
+                }))
+                .sort((a, b) => b.count - a.count),
+            },
+          ]
+        : [];
+    }
+
+    return groupedTeams
+      .filter((team) => team.members.length > 0)
+      .map((team) => ({
         ...team,
-        total: team.members.reduce(
-          (sum, member) => sum + (state?.buzzerBattle.counts[member.id] ?? 0),
-          0,
-        ),
+        total: team.members.reduce((sum, member) => sum + (counts[member.id] ?? 0), 0),
         memberCounts: team.members
           .map((member) => ({
             nickname: member.nickname,
-            count: state?.buzzerBattle.counts[member.id] ?? 0,
+            count: counts[member.id] ?? 0,
           }))
           .sort((a, b) => b.count - a.count),
-      })),
-    [groupedTeams, state?.buzzerBattle.counts],
-  );
+      }));
+  }, [allParticipants, groupedTeams, state?.buzzerBattle.counts]);
 
   const surveyResults = useMemo(
     () =>
