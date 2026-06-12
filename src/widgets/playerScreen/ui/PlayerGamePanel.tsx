@@ -171,7 +171,8 @@ export default function PlayerGamePanel({
               onClick={onBuzzer}
               sx={{
                 width: "100%",
-                minHeight: { xs: 240, md: 300 },
+                flex: 1,
+                minHeight: { xs: 360, md: 460 },
                 borderRadius: "999px",
                 fontSize: { xs: 36, md: 54 },
                 fontWeight: 900,
