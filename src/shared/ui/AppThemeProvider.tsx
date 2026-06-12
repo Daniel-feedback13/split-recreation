@@ -1,3 +1,5 @@
+"use client";
+
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import theme from "@/shared/config/theme";
 import type { PropsWithChildren } from "react";
