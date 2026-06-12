@@ -17,6 +17,8 @@ interface PlayerGamePanelProps {
   isBattleButtonEnabled: boolean;
   isSurveyEnabled: boolean;
   isSpeedQuizEnabled: boolean;
+  isTimingGameEnabled: boolean;
+  timingGameClicked: boolean;
   onAnswerChange: (answer: string) => void;
   onSubmitAnswer: () => void;
   onBuzzer: () => void;
@@ -29,11 +31,15 @@ export default function PlayerGamePanel({
   isBattleButtonEnabled,
   isSurveyEnabled,
   isSpeedQuizEnabled,
+  isTimingGameEnabled,
+  timingGameClicked,
   onAnswerChange,
   onSubmitAnswer,
   onBuzzer,
 }: PlayerGamePanelProps) {
   const isBuzzerBattleMode = state?.mode === "buzzerBattle";
+  const isTimingGameMode = state?.mode === "timingGame";
+  const isLargeButtonMode = isBuzzerBattleMode || isTimingGameMode;
   const battleLevel = state?.buzzerBattle.level ?? 1;
   const isBattleActive = Boolean(state?.buzzerBattle.active);
   const [tapButtonLayout, setTapButtonLayout] = useState<TapButtonLayout>({
@@ -85,7 +91,7 @@ export default function PlayerGamePanel({
         p: { xs: 3, md: 4 },
         borderRadius: 2,
         flex: 1,
-        ...(isBuzzerBattleMode && {
+        ...(isLargeButtonMode && {
           display: "grid",
           placeItems: "center",
         }),
@@ -185,6 +191,26 @@ export default function PlayerGamePanel({
               </Alert>
             )}
           </>
+        )}
+
+        {isTimingGameMode && (
+          <Button
+            type="button"
+            variant="contained"
+            color="error"
+            disabled={!isTimingGameEnabled || timingGameClicked}
+            onClick={onBuzzer}
+            sx={{
+              width: "100%",
+              aspectRatio: "1 / 1",
+              borderRadius: 2,
+              fontSize: { xs: 34, md: 52 },
+              fontWeight: 900,
+              letterSpacing: "0.08em",
+            }}
+          >
+            PUSH!
+          </Button>
         )}
       </Stack>
     </Paper>

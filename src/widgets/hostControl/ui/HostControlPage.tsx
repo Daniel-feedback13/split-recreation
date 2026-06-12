@@ -34,6 +34,7 @@ const modeOptions: { value: GameMode; label: string }[] = [
   { value: "buzzerBattle", label: "버저비터" },
   { value: "teamSurvey", label: "단합력 평가" },
   { value: "speedQuiz", label: "스피드 퀴즈" },
+  { value: "timingGame", label: "눈치게임" },
 ];
 
 export default function HostPage() {
@@ -46,6 +47,7 @@ export default function HostPage() {
     teamSurveyQuestions[0] ?? "",
   );
   const [speedQuizQuestion, setSpeedQuizQuestion] = useState("");
+  const [timingTargetOrder, setTimingTargetOrder] = useState(1);
   const [teamCount, setTeamCount] = useState(2);
   const [draftTeams, setDraftTeams] = useState<TeamConfig[]>([
     createDefaultTeam(0),
@@ -67,6 +69,7 @@ export default function HostPage() {
     setSurveyQuestionIndex(state.teamSurvey.questionIndex);
     setSurveyQuestion(state.teamSurvey.question);
     setSpeedQuizQuestion(state.speedQuiz.question);
+    setTimingTargetOrder(state.timingGame?.targetOrder ?? 1);
 
     if (state.teams.length > 0) {
       const normalizedTeams = normalizeTeams(state.teams.length, state.teams);
@@ -140,6 +143,18 @@ export default function HostPage() {
       phase = "ready";
     } else if (mode === "teamSurvey") {
       screen = "question";
+    } else if (mode === "timingGame") {
+      phase = "ready";
+      sendCommand(phase, screen, {
+        mode,
+        timingGame: {
+          active: false,
+          resultVisible: false,
+          clicks: [],
+        },
+      });
+
+      return;
     }
 
     sendCommand(phase, screen, { mode });
@@ -280,6 +295,44 @@ export default function HostPage() {
         question: speedQuizQuestion,
         buzzerActive: true,
         fastestParticipantId: undefined,
+      },
+    });
+  };
+
+  const setRandomTimingTarget = () => {
+    const participantCount = Math.max(connectedParticipants.length, 1);
+    setTimingTargetOrder(Math.floor(Math.random() * participantCount) + 1);
+  };
+
+  const startTimingGame = () => {
+    const participantCount = Math.max(connectedParticipants.length, 1);
+    const safeTargetOrder = Math.min(Math.max(timingTargetOrder, 1), participantCount);
+
+    setTimingTargetOrder(safeTargetOrder);
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      mode: "timingGame",
+      phase: "playing",
+      screen: "buzzer",
+      message,
+      timingGame: {
+        targetOrder: safeTargetOrder,
+        active: true,
+        resultVisible: false,
+        clicks: [],
+      },
+    });
+  };
+
+  const revealTimingGameResult = () => {
+    socket.emit("host:command", {
+      roomId: DEFAULT_ROOM_ID,
+      mode: "timingGame",
+      phase: "finished",
+      screen: "result",
+      timingGame: {
+        active: false,
+        resultVisible: true,
       },
     });
   };
@@ -629,6 +682,38 @@ export default function HostPage() {
                 </Button>
                 <Button variant="outlined" onClick={resetSpeedQuiz}>
                   오답 후 다시 활성화
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+
+          <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 2 }}>
+            <Stack spacing={2.5}>
+              <Typography variant="h5">눈치게임</Typography>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <TextField
+                  type="number"
+                  label="승리 순번"
+                  value={timingTargetOrder}
+                  onChange={(event) =>
+                    setTimingTargetOrder(Math.max(1, Number(event.target.value) || 1))
+                  }
+                  sx={{ maxWidth: 220 }}
+                />
+                <Button variant="outlined" onClick={setRandomTimingTarget}>
+                  랜덤 지정
+                </Button>
+              </Stack>
+              <Typography color="text.secondary">
+                현재 참가 인원 기준 1부터 {Math.max(connectedParticipants.length, 1)}
+                까지 지정할 수 있습니다.
+              </Typography>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <Button variant="contained" onClick={startTimingGame}>
+                  시작
+                </Button>
+                <Button variant="outlined" onClick={revealTimingGameResult}>
+                  결과 공개
                 </Button>
               </Stack>
             </Stack>

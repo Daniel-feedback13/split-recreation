@@ -20,6 +20,16 @@ function normalizeAnswer(answer: string) {
   return answer.trim().toLowerCase();
 }
 
+function formatTimeWithMilliseconds(timestamp: number) {
+  const date = new Date(timestamp);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+}
+
 export default function DisplayPage() {
   const { socket, state, lastEvent } = useRoomSocket(DEFAULT_ROOM_ID);
   const announcedParticipantId = useRef<string | undefined>(undefined);
@@ -130,6 +140,20 @@ export default function DisplayPage() {
 
   const fastestParticipant = state?.participants.find(
     (participant) => participant.id === state.speedQuiz.fastestParticipantId,
+  );
+
+  const timingGameResults = useMemo(
+    () =>
+      state?.timingGame?.clicks
+        .map((click) => ({
+          ...click,
+          participant: state.participants.find(
+            (participant) => participant.id === click.participantId,
+          ),
+          isWinner: click.order === (state.timingGame?.targetOrder ?? 1),
+        }))
+        .sort((a, b) => a.order - b.order) ?? [],
+    [state?.participants, state?.timingGame?.clicks, state?.timingGame?.targetOrder],
   );
 
   const renderModeContent = () => {
@@ -343,6 +367,101 @@ export default function DisplayPage() {
             color={state.teamSurvey.active ? "primary" : "default"}
             label={state.teamSurvey.active ? "답변 입력 가능" : "대기 중"}
           />
+        </Stack>
+      );
+    }
+
+    if (state.mode === "timingGame") {
+      const timingGame = state.timingGame ?? {
+        targetOrder: 1,
+        active: false,
+        resultVisible: false,
+        clicks: [],
+      };
+      const shouldShowTimingGameResult =
+        timingGame.resultVisible ||
+        (state.phase === "finished" &&
+          state.screen === "result" &&
+          timingGameResults.length > 0);
+
+      if (shouldShowTimingGameResult) {
+        const winner = timingGameResults.find((result) => result.isWinner);
+
+        return (
+          <Stack spacing={3} sx={{ width: "100%" }}>
+            <Typography variant="h2">눈치게임 결과</Typography>
+            <Typography variant="h5" color="text.secondary">
+              목표 순번: {timingGame.targetOrder}번째
+            </Typography>
+            {winner?.participant && (
+              <Paper
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  borderRadius: 2,
+                  textAlign: "center",
+                  background:
+                    "linear-gradient(135deg, rgba(255,209,102,0.18) 0%, rgba(93,214,192,0.12) 100%)",
+                }}
+              >
+                <Typography variant="overline" color="secondary.main">
+                  WINNER
+                </Typography>
+                <Typography variant="h2" color="secondary.main">
+                  {winner.participant.nickname}
+                </Typography>
+              </Paper>
+            )}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                gap: 2,
+                width: "100%",
+              }}
+            >
+              {timingGameResults.map((result) => (
+                <Paper
+                  key={result.participantId}
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    borderColor: result.isWinner
+                      ? "secondary.main"
+                      : "rgba(255,255,255,0.12)",
+                    backgroundColor: result.isWinner
+                      ? "rgba(93,214,192,0.12)"
+                      : "rgba(124,140,255,0.06)",
+                  }}
+                >
+                  <Stack direction="row" sx={{ justifyContent: "space-between", gap: 2 }}>
+                    <Typography variant="h5">{result.order}번째</Typography>
+                    <Stack spacing={0.75} sx={{ alignItems: "flex-end" }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {result.participant?.nickname ?? "알 수 없음"}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body1">
+                        {formatTimeWithMilliseconds(result.clickedAt)}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              ))}
+            </Box>
+          </Stack>
+        );
+      }
+
+      return (
+        <Stack spacing={3} sx={{ alignItems: "center" }}>
+          <Typography variant="h1" sx={{ fontSize: { xs: 54, md: 96 } }}>
+            {timingGame.active ? timingGame.targetOrder : "Ready"}
+          </Typography>
+          {timingGame.active && (
+            <Typography variant="h5" color="text.secondary">
+              이 순서에 누르는 참가자가 승리합니다
+            </Typography>
+          )}
         </Stack>
       );
     }

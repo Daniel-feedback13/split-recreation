@@ -8,7 +8,12 @@ export type ScreenRoute =
   | "scoreboard"
   | "custom";
 
-export type GameMode = "idle" | "buzzerBattle" | "teamSurvey" | "speedQuiz";
+export type GameMode =
+  | "idle"
+  | "buzzerBattle"
+  | "teamSurvey"
+  | "speedQuiz"
+  | "timingGame";
 
 export type BuzzerBattleLevel = 1 | 2 | 3;
 
@@ -51,6 +56,19 @@ export interface SpeedQuizState {
   fastestParticipantId?: string;
 }
 
+export interface TimingGameClick {
+  participantId: string;
+  order: number;
+  clickedAt: number;
+}
+
+export interface TimingGameState {
+  targetOrder: number;
+  active: boolean;
+  resultVisible: boolean;
+  clicks: TimingGameClick[];
+}
+
 export interface RoomState {
   roomId: string;
   phase: RoomPhase;
@@ -63,6 +81,7 @@ export interface RoomState {
   buzzerBattle: BuzzerBattleState;
   teamSurvey: TeamSurveyState;
   speedQuiz: SpeedQuizState;
+  timingGame: TimingGameState;
   activeParticipantId?: string;
   message?: string;
   updatedAt: number;
@@ -91,6 +110,7 @@ export interface HostCommandPayload {
   buzzerBattle?: Partial<BuzzerBattleState>;
   teamSurvey?: Partial<TeamSurveyState>;
   speedQuiz?: Partial<SpeedQuizState>;
+  timingGame?: Partial<TimingGameState>;
 }
 
 export interface BuzzerPayload {

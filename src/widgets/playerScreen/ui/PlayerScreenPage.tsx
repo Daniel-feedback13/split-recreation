@@ -108,6 +108,16 @@ export default function PlayerPage() {
     hasJoined && state?.mode === "teamSurvey" && state.teamSurvey.active;
   const isSpeedQuizEnabled =
     hasJoined && state?.mode === "speedQuiz" && state.speedQuiz.buzzerActive;
+  const timingGameClicked = participantId
+    ? Boolean(
+        state?.timingGame?.clicks.some((click) => click.participantId === participantId),
+      )
+    : false;
+  const isTimingGameEnabled =
+    hasJoined &&
+    state?.mode === "timingGame" &&
+    (Boolean(state.timingGame?.active) || state.phase === "playing") &&
+    !timingGameClicked;
 
   return (
     <Box
@@ -149,6 +159,8 @@ export default function PlayerPage() {
               isBattleButtonEnabled={isBattleButtonEnabled}
               isSurveyEnabled={isSurveyEnabled}
               isSpeedQuizEnabled={isSpeedQuizEnabled}
+              isTimingGameEnabled={isTimingGameEnabled}
+              timingGameClicked={timingGameClicked}
               onAnswerChange={setAnswer}
               onSubmitAnswer={submitAnswer}
               onBuzzer={handleBuzzer}

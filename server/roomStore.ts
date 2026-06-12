@@ -21,6 +21,7 @@ interface RoomRecord {
   buzzerBattle: RoomState["buzzerBattle"];
   teamSurvey: RoomState["teamSurvey"];
   speedQuiz: RoomState["speedQuiz"];
+  timingGame?: RoomState["timingGame"];
   activeParticipantId?: string;
   message?: string;
   updatedAt: number;
@@ -37,9 +38,32 @@ interface RoomPatch {
   buzzerBattle?: Partial<RoomState["buzzerBattle"]>;
   teamSurvey?: Partial<RoomState["teamSurvey"]>;
   speedQuiz?: Partial<RoomState["speedQuiz"]>;
+  timingGame?: Partial<RoomState["timingGame"]>;
 }
 
 const rooms = new Map<string, RoomRecord>();
+
+function createDefaultTimingGame(): RoomState["timingGame"] {
+  return {
+    targetOrder: 1,
+    active: false,
+    resultVisible: false,
+    clicks: [],
+  };
+}
+
+function ensureRoomDefaults(
+  room: RoomRecord,
+): RoomRecord & { timingGame: RoomState["timingGame"] } {
+  room.showTeamScoreOverlay ??= false;
+  room.timingGame ??= createDefaultTimingGame();
+  room.buzzerBattle = {
+    ...room.buzzerBattle,
+    level: room.buzzerBattle.level ?? 1,
+  };
+
+  return room as RoomRecord & { timingGame: RoomState["timingGame"] };
+}
 
 function createRoom(roomId: string): RoomRecord {
   const room: RoomRecord = {
@@ -69,34 +93,41 @@ function createRoom(roomId: string): RoomRecord {
       question: "",
       buzzerActive: false,
     },
+    timingGame: createDefaultTimingGame(),
     updatedAt: Date.now(),
   };
   rooms.set(roomId, room);
   return room;
 }
 
-export function getOrCreateRoom(roomId: string): RoomRecord {
-  return rooms.get(roomId) ?? createRoom(roomId);
+export function getOrCreateRoom(
+  roomId: string,
+): RoomRecord & { timingGame: RoomState["timingGame"] } {
+  const room = rooms.get(roomId) ?? createRoom(roomId);
+  return ensureRoomDefaults(room);
 }
 
 export function toRoomState(room: RoomRecord): RoomState {
+  const safeRoom = ensureRoomDefaults(room);
+
   return {
-    roomId: room.roomId,
-    phase: room.phase,
-    screen: room.screen,
-    mode: room.mode,
-    participants: Array.from(room.participants.values()).sort(
+    roomId: safeRoom.roomId,
+    phase: safeRoom.phase,
+    screen: safeRoom.screen,
+    mode: safeRoom.mode,
+    participants: Array.from(safeRoom.participants.values()).sort(
       (a, b) => a.joinedAt - b.joinedAt,
     ),
-    showParticipantOverlay: room.showParticipantOverlay,
-    showTeamScoreOverlay: room.showTeamScoreOverlay,
-    teams: room.teams,
-    buzzerBattle: room.buzzerBattle,
-    teamSurvey: room.teamSurvey,
-    speedQuiz: room.speedQuiz,
-    activeParticipantId: room.activeParticipantId,
-    message: room.message,
-    updatedAt: room.updatedAt,
+    showParticipantOverlay: safeRoom.showParticipantOverlay,
+    showTeamScoreOverlay: safeRoom.showTeamScoreOverlay,
+    teams: safeRoom.teams,
+    buzzerBattle: safeRoom.buzzerBattle,
+    teamSurvey: safeRoom.teamSurvey,
+    speedQuiz: safeRoom.speedQuiz,
+    timingGame: safeRoom.timingGame,
+    activeParticipantId: safeRoom.activeParticipantId,
+    message: safeRoom.message,
+    updatedAt: safeRoom.updatedAt,
   };
 }
 
@@ -156,6 +187,11 @@ export function updateRoom(roomId: string, patch: RoomPatch): RoomRecord {
   room.buzzerBattle = { ...room.buzzerBattle, ...patch.buzzerBattle };
   room.teamSurvey = { ...room.teamSurvey, ...patch.teamSurvey };
   room.speedQuiz = { ...room.speedQuiz, ...patch.speedQuiz };
+  room.timingGame = {
+    ...createDefaultTimingGame(),
+    ...room.timingGame,
+    ...patch.timingGame,
+  };
   room.updatedAt = Date.now();
   return room;
 }
@@ -216,6 +252,34 @@ export function acceptSpeedQuizBuzzer(
     fastestParticipantId: participantId,
   };
   room.activeParticipantId = participantId;
+  room.updatedAt = Date.now();
+  return participant;
+}
+
+export function acceptTimingGameClick(
+  roomId: string,
+  participantId: string,
+): Participant | null {
+  const room = getOrCreateRoom(roomId);
+  if (room.mode !== "timingGame" || !room.timingGame.active) return null;
+  const participant = room.participants.get(participantId);
+  if (!participant) return null;
+  const alreadyClicked = room.timingGame.clicks.some(
+    (click) => click.participantId === participantId,
+  );
+  if (alreadyClicked) return null;
+
+  room.timingGame = {
+    ...room.timingGame,
+    clicks: [
+      ...room.timingGame.clicks,
+      {
+        participantId,
+        order: room.timingGame.clicks.length + 1,
+        clickedAt: Date.now(),
+      },
+    ],
+  };
   room.updatedAt = Date.now();
   return participant;
 }

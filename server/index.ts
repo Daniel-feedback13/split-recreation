@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import type { ClientToServerEvents, ServerToClientEvents } from "../src/types/socket";
 import {
   acceptSpeedQuizBuzzer,
+  acceptTimingGameClick,
   adjustScore,
   getOrCreateRoom,
   incrementBuzzerBattleCount,
@@ -109,10 +110,12 @@ void findAvailablePort(preferredPort, hostname).then((port) => {
           mode: payload.mode,
           message: payload.message,
           showParticipantOverlay: payload.showParticipantOverlay,
+          showTeamScoreOverlay: payload.showTeamScoreOverlay,
           teams: payload.teams,
           buzzerBattle: payload.buzzerBattle,
           teamSurvey: payload.teamSurvey,
           speedQuiz: payload.speedQuiz,
+          timingGame: payload.timingGame,
         });
 
         if (payload.buzzerBattle?.active) {
@@ -186,6 +189,17 @@ void findAvailablePort(preferredPort, hostname).then((port) => {
           io.to(roomId).emit("screen:effect", {
             type: "shake",
             message: `${participant.nickname} 버저!`,
+          });
+          emitRoomState(roomId);
+        }
+
+        if (room.mode === "timingGame") {
+          const participant = acceptTimingGameClick(roomId, participantId);
+          if (!participant) return;
+          io.to(roomId).emit("buzzer:accepted", {
+            participantId,
+            nickname: participant.nickname,
+            at: Date.now(),
           });
           emitRoomState(roomId);
         }
